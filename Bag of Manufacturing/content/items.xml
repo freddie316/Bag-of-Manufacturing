@@ -1,0 +1,5 @@
+<items gfxroot="gfx/items/" version="1">
+
+    <active id="1" name="Bag of Manufacturing" gfx="omega_bagofcrafting.png" description="Fully operational!" quality="4" persistent="true"/>
+
+</items>
