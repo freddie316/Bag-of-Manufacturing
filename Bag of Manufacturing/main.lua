@@ -1,5 +1,5 @@
 -- Load mod
-local mod = RegisterMod("Advanced Bag of Crafting", 1)
+local mod = RegisterMod("Bag of Manufacturing", 1)
 
 mod.bagId = Isaac.GetItemIdByName("Bag of Manufacturing")
 mod.bagAnim = Isaac.GetEntityVariantByName("Bag of Manufacturing")
