@@ -14,7 +14,7 @@ end
 
 local resultId = 0
 
-local bagSlot = {}
+local bagSlot = nil
 local bagOut = 0
 local offset = Vector(0,4)
 local offsetSwing = Vector(0,-40)
@@ -386,7 +386,15 @@ local holding = 0 -- how long has the player held
 local holdTime = 1.5*60 -- how many frames to hold for
 function bag.getInput(t)
     local player = game:GetPlayer(0)
-    if Input.IsActionPressed(ButtonAction.ACTION_ITEM,0) then
+    local slotButton = nil
+    
+    if bagSlot == ActiveSlot.SLOT_POCKET then
+        slotButton = ButtonAction.ACTION_PILLCARD
+    else 
+        slotButton = ButtonAction.ACTION_ITEM
+    end
+
+    if Input.IsActionPressed(slotButton,0) then
         holding = holding + 1
     else
         holding = 0
@@ -451,6 +459,16 @@ function bag.getInput(t)
             recipe[selection] = recipe[selection] - 1
         end
     end
+end
+
+-- Handle starting as Tainted Cain
+---@param player EntityPlayer
+function bag.TaintedCainInit(player)
+    if player:GetPlayerType() ~= Isaac.GetPlayerTypeByName("Cain",true) then
+        return
+    end
+
+    player:SetPocketActiveItem(BagId, ActiveSlot.SLOT_POCKET, true)
 end
 
 return bag
