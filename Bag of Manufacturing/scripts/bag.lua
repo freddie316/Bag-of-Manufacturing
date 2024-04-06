@@ -407,6 +407,10 @@ function bag.getInput(t)
     local controller = player.ControllerIndex
     local slotButton = nil
     
+    if bagSlot == nil then
+        return
+    end
+
     if bagSlot == ActiveSlot.SLOT_POCKET then
         slotButton = ButtonAction.ACTION_PILLCARD
     else 
