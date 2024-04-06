@@ -13,7 +13,8 @@ mod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE,  bag.swing, mod.bagAnim)
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, bag.newRoom)
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, bag.onRender)
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, bag.getInput)
-mod:AddCallback(ModCallbacks.MC_POST_PLAYER_INIT, bag.TaintedCainInit)
+mod:AddCallback(ModCallbacks.MC_POST_PEFFECT_UPDATE, bag.TaintedCainInit)
+mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, bag.reset)
 
 -- If EID is detected, add a special description
 if EID then
