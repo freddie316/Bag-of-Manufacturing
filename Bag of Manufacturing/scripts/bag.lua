@@ -404,6 +404,7 @@ local holding = 0 -- how long has the player held
 local holdTime = 1.5*60 -- how many frames to hold for
 function bag.getInput(t)
     local player = game:GetPlayer(0)
+    local controller = player.ControllerIndex
     local slotButton = nil
     
     if bagSlot == ActiveSlot.SLOT_POCKET then
@@ -412,7 +413,7 @@ function bag.getInput(t)
         slotButton = ButtonAction.ACTION_ITEM
     end
 
-    if Input.IsActionPressed(slotButton,0) then
+    if Input.IsActionPressed(slotButton,controller) then
         holding = holding + 1
     else
         holding = 0
@@ -438,7 +439,7 @@ function bag.getInput(t)
         player:AddCollectible(resultId)
     end
 
-    if (bagOut==1) and Input.IsActionTriggered(ButtonAction.ACTION_MAP,0) then -- detect when to enter the recipe GUI
+    if (bagOut==1) and Input.IsActionTriggered(ButtonAction.ACTION_MAP,controller) then -- detect when to enter the recipe GUI
         if not guiMode then
             guiMode = true
             player.ControlsEnabled = false
@@ -456,7 +457,7 @@ function bag.getInput(t)
             end
         end
 
-        if selection < 27 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTDOWN,0) then
+        if selection < 27 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTDOWN,controller) then
             selection = selection + 1
             while bagContent[selection] == nil or bagContent[selection] == 0 do -- skip over entries not in the bag
                 selection = selection + 1
@@ -464,7 +465,7 @@ function bag.getInput(t)
                     selection = 0
                 end
             end
-        elseif selection > 0 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTUP,0) then
+        elseif selection > 0 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTUP,controller) then
             selection = selection - 1
             while bagContent[selection] == nil or bagContent[selection] == 0 do -- skip over entries not in the bag
                 selection = selection - 1
@@ -474,9 +475,9 @@ function bag.getInput(t)
             end
         end
 
-        if recipe[selection] < bagContent[selection] and #EID.BoC.BagItemsOverride < 8 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTRIGHT,0) then
+        if recipe[selection] < bagContent[selection] and #EID.BoC.BagItemsOverride < 8 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTRIGHT,controller) then
             recipe[selection] = recipe[selection] + 1
-        elseif recipe[selection] > 0 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTLEFT,0) then
+        elseif recipe[selection] > 0 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTLEFT,controller) then
             recipe[selection] = recipe[selection] - 1
         end
     end
