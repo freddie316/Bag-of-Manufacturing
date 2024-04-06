@@ -14,7 +14,7 @@ end
 
 local resultId = 0
 
-local bagSlot = {}
+local bagSlot = nil
 local bagOut = 0
 local offset = Vector(0,4)
 local offsetSwing = Vector(0,-40)
@@ -241,8 +241,8 @@ function bag.swing(_, effect)
             angle = fireDir * 90 + 90
             sprite.Rotation = angle
 
-            if player.FireDelay < player.MaxFireDelay then
-                player.FireDelay = player.MaxFireDelay * 2.5
+            if player.FireDelay < 25.0 then -- cap bag swing speed
+                player.FireDelay = 25.0
                 
                 local damage = 3
                 local bagOffset = offsetSwing:Rotated(angle)
@@ -312,7 +312,7 @@ local function bagCount(T) -- compute table length
 local function renderGUI() -- function to handle rendering the recipe selection gui
     local f = Font()
     f:Load("font/luaminioutlined.fnt")
-    local x = 300 -- TODO: update these to use GetScreenWidth and GetScreenHeight to account for different monitors and fullscreen and such
+    local x = Isaac.GetScreenWidth()*0.6 -- TODO: update these to use GetScreenWidth and GetScreenHeight to account for different monitors and fullscreen and such
     local y = 5
 
     if bagCount(bagContent) < 8 then
@@ -323,18 +323,31 @@ local function renderGUI() -- function to handle rendering the recipe selection 
     local yOffset = 0
     local yShift = 7
 
-    table.sort(bagContent) -- sort the table before rendering so the order that the player 
-
+    -- round about way to display the items in the correct order 
+    local order = {}
+    local ind = 1
     f:DrawString("Select Recipe:", x, y, KColor(1,1,1,255),0,true)
     for k,v in pairs(bagContent) do
-        local toPrint = pickupNameLookup[k]..": "..recipe[k].." ("..v..")"
-        yOffset = yOffset + yShift
-        if selection == k then
-            f:DrawString(toPrint, x, y+yOffset, KColor(0,1,0,255),0,true)
-        else
-            f:DrawString(toPrint, x, y+yOffset, KColor(1,1,1,255),0,true)
+        if v == 0 then
+            goto continue
         end
-        
+
+        table.insert(order, k)
+
+        ::continue::
+    end
+
+    table.sort(order)
+
+    for k,v in ipairs(order) do
+        yOffset = yOffset + yShift
+
+        if selection == v then
+            f:DrawString(pickupNameLookup[v]..": "..recipe[v].." ("..bagContent[v]..")", x, y+yOffset, KColor(0,1,0,255), 0 , true)
+        else
+            f:DrawString(pickupNameLookup[v]..": "..recipe[v].." ("..bagContent[v]..")", x, y+yOffset, KColor(1,1,1,255), 0 , true)
+        end
+
     end
 end
 
@@ -359,7 +372,7 @@ function bag.onRender(t)
             end
         end
 
-        -- Rendering overrides for EID are FUNKY! Still not working how I like
+        -- Rendering overrides for EID are FUNKY! Still not working how I would like
         EID:handleBagOfCraftingUpdating()
         EID:handleBagOfCraftingRendering(false)
         if not EID.isDisplaying then
@@ -367,7 +380,12 @@ function bag.onRender(t)
         end
 
         if guiMode then
-            renderGUI()
+            if bagOut == 0 then -- failsafe for a softlock
+                guiMode = false
+                bagPlayer.ControlsEnabled = true
+            else
+                renderGUI()
+            end
         end
     end
 end
@@ -386,13 +404,21 @@ local holding = 0 -- how long has the player held
 local holdTime = 1.5*60 -- how many frames to hold for
 function bag.getInput(t)
     local player = game:GetPlayer(0)
-    if Input.IsActionPressed(ButtonAction.ACTION_ITEM,0) then
+    local slotButton = nil
+    
+    if bagSlot == ActiveSlot.SLOT_POCKET then
+        slotButton = ButtonAction.ACTION_PILLCARD
+    else 
+        slotButton = ButtonAction.ACTION_ITEM
+    end
+
+    if Input.IsActionPressed(slotButton,0) then
         holding = holding + 1
     else
         holding = 0
     end
 
-    if holding == holdTime then -- Handle giving the crafted item
+    if holding == holdTime and #EID.BoC.BagItemsOverride == 8 then -- Handle giving the crafted item
         local itemConfig = Isaac.GetItemConfig()
         local resultId = EID:calculateBagOfCrafting(EID.BoC.BagItemsOverride)
 
@@ -425,11 +451,14 @@ function bag.getInput(t)
     if guiMode and bagCount(bagContent) >= 8 then -- checking if bag content has at least 8 items guarantees while loop exits 
         while bagContent[selection] == nil do -- move selection cursor to first available item in the bag
             selection = selection + 1
+            if selection > 27 then -- failsafe wrap around
+                selection = 0
+            end
         end
 
         if selection < 27 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTDOWN,0) then
             selection = selection + 1
-            while bagContent[selection] == nil do -- skip over entries not in the bag
+            while bagContent[selection] == nil or bagContent[selection] == 0 do -- skip over entries not in the bag
                 selection = selection + 1
                 if selection > 27 then
                     selection = 0
@@ -437,7 +466,7 @@ function bag.getInput(t)
             end
         elseif selection > 0 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTUP,0) then
             selection = selection - 1
-            while bagContent[selection] == nil do -- skip over entries not in the bag
+            while bagContent[selection] == nil or bagContent[selection] == 0 do -- skip over entries not in the bag
                 selection = selection - 1
                 if selection < 0 then
                     selection = 27
@@ -445,12 +474,36 @@ function bag.getInput(t)
             end
         end
 
-        if recipe[selection] < bagContent[selection] and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTRIGHT,0) then
+        if recipe[selection] < bagContent[selection] and #EID.BoC.BagItemsOverride < 8 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTRIGHT,0) then
             recipe[selection] = recipe[selection] + 1
         elseif recipe[selection] > 0 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTLEFT,0) then
             recipe[selection] = recipe[selection] - 1
         end
     end
+end
+
+-- Handle starting as Tainted Cain
+function bag.TaintedCainInit(_)
+    local player = Isaac.GetPlayer()
+    if player:GetPlayerType() ~= PlayerType.PLAYER_CAIN_B then
+        return
+    end
+    if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= BagId then
+        player:SetPocketActiveItem(BagId, ActiveSlot.SLOT_POCKET, true)
+    end
+end
+
+function bag.reset(_, isContinued)
+    if isContinued then
+        return
+    end
+    bagContent = {}
+    for i=1,27 do -- init recipe to all zero
+        recipe[i]=0
+    end
+    bagOut = 0
+    guiMode = false
+    selection = 0
 end
 
 return bag
