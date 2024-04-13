@@ -1,8 +1,6 @@
 -- Instantiate important objects
 local game = Game()
-
-BagId = Isaac.GetItemIdByName("Bag of Manufacturing")
-BagAnim = Isaac.GetEntityVariantByName("Bag of Manufacturing")
+local json = require("json")
 
 -- Important Variables
 local bag = {} -- the call back object
@@ -101,7 +99,7 @@ local pickupNameLookup = {
 function bag.use(_, item, rng, player, useFlags, activeSlot, varData)
 
     if (bagOut == 0) then
-        local effect = Isaac.Spawn(EntityType.ENTITY_EFFECT, BagAnim, 0, player.Position - offset, Vector.Zero, player):ToEffect()
+        local effect = Isaac.Spawn(EntityType.ENTITY_EFFECT, BoM.bagAnim, 0, player.Position - offset, Vector.Zero, player):ToEffect()
         effect.Parent = player
         effect.DepthOffset = 99
         bagSlot = activeSlot
@@ -291,7 +289,7 @@ end
 
 function bag.newRoom()
     local player = Isaac.GetPlayer(0)
-    if (bagOut == 1 and player:HasCollectible(BagId)) then
+    if (bagOut == 1 and player:HasCollectible(BoM.bagId)) then
         --local effect = Isaac.Spawn(EntityType.ENTITY_EFFECT, BagAnim, 0, player.Position - offset, Vector.Zero, player):ToEffect()
         --effect.Parent = player
         --effect.DepthOffset = 99
@@ -354,7 +352,7 @@ end
 -- Render a table that displays the current contents of the bag
 function bag.onRender(t)
     -- Override EID display, the bag's content will override the inventory display of EID
-    local hasBag, bagPlayer = EID:PlayersHaveCollectible(BagId)
+    local hasBag, bagPlayer = EID:PlayersHaveCollectible(BoM.bagId)
     if hasBag then
         EID.bagPlayer = bagPlayer
         -- EID.ShowCraftingResult = true
@@ -404,15 +402,20 @@ local holding = 0 -- how long has the player held
 local holdTime = 1.5*60 -- how many frames to hold for
 function bag.getInput(t)
     local player = game:GetPlayer(0)
+    local controller = player.ControllerIndex
     local slotButton = nil
     
+    if bagSlot == nil then
+        return
+    end
+
     if bagSlot == ActiveSlot.SLOT_POCKET then
         slotButton = ButtonAction.ACTION_PILLCARD
     else 
         slotButton = ButtonAction.ACTION_ITEM
     end
 
-    if Input.IsActionPressed(slotButton,0) then
+    if Input.IsActionPressed(slotButton,controller) then
         holding = holding + 1
     else
         holding = 0
@@ -438,7 +441,7 @@ function bag.getInput(t)
         player:AddCollectible(resultId)
     end
 
-    if (bagOut==1) and Input.IsActionTriggered(ButtonAction.ACTION_MAP,0) then -- detect when to enter the recipe GUI
+    if (bagOut==1) and Input.IsActionTriggered(ButtonAction.ACTION_MAP,controller) then -- detect when to enter the recipe GUI
         if not guiMode then
             guiMode = true
             player.ControlsEnabled = false
@@ -456,7 +459,7 @@ function bag.getInput(t)
             end
         end
 
-        if selection < 27 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTDOWN,0) then
+        if selection < 27 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTDOWN,controller) then
             selection = selection + 1
             while bagContent[selection] == nil or bagContent[selection] == 0 do -- skip over entries not in the bag
                 selection = selection + 1
@@ -464,7 +467,7 @@ function bag.getInput(t)
                     selection = 0
                 end
             end
-        elseif selection > 0 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTUP,0) then
+        elseif selection > 0 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTUP,controller) then
             selection = selection - 1
             while bagContent[selection] == nil or bagContent[selection] == 0 do -- skip over entries not in the bag
                 selection = selection - 1
@@ -474,9 +477,9 @@ function bag.getInput(t)
             end
         end
 
-        if recipe[selection] < bagContent[selection] and #EID.BoC.BagItemsOverride < 8 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTRIGHT,0) then
+        if recipe[selection] < bagContent[selection] and #EID.BoC.BagItemsOverride < 8 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTRIGHT,controller) then
             recipe[selection] = recipe[selection] + 1
-        elseif recipe[selection] > 0 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTLEFT,0) then
+        elseif recipe[selection] > 0 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTLEFT,controller) then
             recipe[selection] = recipe[selection] - 1
         end
     end
@@ -488,15 +491,21 @@ function bag.TaintedCainInit(_)
     if player:GetPlayerType() ~= PlayerType.PLAYER_CAIN_B then
         return
     end
-    if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= BagId then
-        player:SetPocketActiveItem(BagId, ActiveSlot.SLOT_POCKET, true)
+    if player:GetActiveItem(ActiveSlot.SLOT_POCKET) ~= BoM.bagId then
+        player:SetPocketActiveItem(BoM.bagId, ActiveSlot.SLOT_POCKET, true)
     end
 end
 
 function bag.reset(_, isContinued)
     if isContinued then
+        if BoM:HasData() then
+            local bagData = BoM:LoadData()
+            bagData = string.gsub(bagData, "null", "0")
+            bagContent = json.decode(bagData)
+        end
         return
     end
+
     bagContent = {}
     for i=1,27 do -- init recipe to all zero
         recipe[i]=0
@@ -504,6 +513,12 @@ function bag.reset(_, isContinued)
     bagOut = 0
     guiMode = false
     selection = 0
+end
+
+-- Save bag content when the game is exited
+function bag.saveData()
+    local jsonString = json.encode(bagContent,true)
+    BoM:SaveData(jsonString)
 end
 
 return bag

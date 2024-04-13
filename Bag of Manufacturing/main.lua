@@ -1,22 +1,23 @@
 -- Load mod
-local mod = RegisterMod("Bag of Manufacturing", 1)
+BoM = RegisterMod("Bag of Manufacturing", 1)
 
-mod.bagId = Isaac.GetItemIdByName("Bag of Manufacturing")
-mod.bagAnim = Isaac.GetEntityVariantByName("Bag of Manufacturing")
+BoM.bagId = Isaac.GetItemIdByName("Bag of Manufacturing")
+BoM.bagAnim = Isaac.GetEntityVariantByName("Bag of Manufacturing")
 
 -- Load bag code
 local bag = require("scripts/bag")
 
 -- Bag callback
-mod:AddCallback(ModCallbacks.MC_USE_ITEM, bag.use, mod.bagId)
-mod:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE,  bag.swing, mod.bagAnim)
-mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, bag.newRoom)
-mod:AddCallback(ModCallbacks.MC_POST_RENDER, bag.onRender)
-mod:AddCallback(ModCallbacks.MC_POST_RENDER, bag.getInput)
-mod:AddCallback(ModCallbacks.MC_POST_PEFFECT_UPDATE, bag.TaintedCainInit)
-mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, bag.reset)
+BoM:AddCallback(ModCallbacks.MC_USE_ITEM, bag.use, BoM.bagId)
+BoM:AddCallback(ModCallbacks.MC_POST_EFFECT_UPDATE,  bag.swing, BoM.bagAnim)
+BoM:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, bag.newRoom)
+BoM:AddCallback(ModCallbacks.MC_POST_RENDER, bag.onRender)
+BoM:AddCallback(ModCallbacks.MC_POST_RENDER, bag.getInput)
+BoM:AddCallback(ModCallbacks.MC_POST_PEFFECT_UPDATE, bag.TaintedCainInit)
+BoM:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, bag.reset)
+BoM:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, bag.saveData)
 
 -- If EID is detected, add a special description
 if EID then
-    EID:addCollectible(mod.bagId, "An upgraded version of the Bag of Crafting.")
+    EID:addCollectible(BoM.bagId, "An upgraded version of the Bag of Crafting.")
 end
