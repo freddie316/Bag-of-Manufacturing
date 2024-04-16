@@ -1,8 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-	<name>Bag of Manufacturing</name>
-	<directory>bag of manufacturing</directory>
-	<description/>
-	<version>1.0</version>
-	<visibility/>
+    <name>Bag of Manufacturing</name>
+    <directory>bag of manufacturing</directory>
+    <id>0</id>
+    <description></description>
+    <version>1.0</version>
+    <visibility>Public</visibility>
+    <tag id="Lua"/>
+    <tag id="Active Items"/>
 </metadata>
-

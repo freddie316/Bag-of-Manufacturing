@@ -224,9 +224,9 @@ function bag.swing(_, effect)
     local fireDir = player:GetFireDirection()
     local walkDir = player:GetMovementDirection()
 
-    -- Disable tears
-    if player.FireDelay < player.MaxFireDelay then
-        player.FireDelay = player.MaxFireDelay - 1
+    -- Disable regular tears
+    if player.FireDelay < 5 then
+        player.FireDelay = 5
     end
 
     effect.SpriteScale = player.SpriteScale
@@ -236,24 +236,23 @@ function bag.swing(_, effect)
     if anim == "Idle" then
         local angle = 0
         if fireDir > -1 then
+            -- Disable brim/techX/Csection tears
+            player:SetShootingCooldown(20)
+
             angle = fireDir * 90 + 90
             sprite.Rotation = angle
 
-            if player.FireDelay < 25.0 then -- cap bag swing speed
-                player.FireDelay = 25.0
-                
-                local damage = 3
-                local bagOffset = offsetSwing:Rotated(angle)
-                
-                local hit = false
+            local damage = 3
+            local bagOffset = offsetSwing:Rotated(angle)
+            
+            local hit = false
 
-                sprite:Play("Swing", true)
+            sprite:Play("Swing", true)
 
-                SFXManager():Play(SoundEffect.SOUND_POOPITEM_HOLD, 1, 0, false, 1) -- TODO: find correct sound
-                hit = hitDetectEntity(damage, effect, player, bagOffset)
-                hitDetectGrid(damage,effect,player,bagOffset)
+            SFXManager():Play(SoundEffect.SOUND_POOPITEM_HOLD, 1, 0, false, 1) -- TODO: find correct sound
+            hit = hitDetectEntity(damage, effect, player, bagOffset)
+            hitDetectGrid(damage,effect,player,bagOffset)
 
-            end
         elseif walkDir > -1 then
             angle = walkDir * 90 + 90
             sprite.Rotation = angle
@@ -310,7 +309,7 @@ local function bagCount(T) -- compute table length
 local function renderGUI() -- function to handle rendering the recipe selection gui
     local f = Font()
     f:Load("font/luaminioutlined.fnt")
-    local x = Isaac.GetScreenWidth()*0.6 -- TODO: update these to use GetScreenWidth and GetScreenHeight to account for different monitors and fullscreen and such
+    local x = Isaac.GetScreenWidth()*0.6 
     local y = 5
 
     if bagCount(bagContent) < 8 then
