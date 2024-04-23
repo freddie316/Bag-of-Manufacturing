@@ -5,9 +5,10 @@ local json = require("json")
 -- Important Variables
 local bag = {} -- the call back object
 local bagContent = {} -- whats in the bag
-local recipe = {} -- the item recipe, should be exactly 8 items 
-for i=1,27 do -- init recipe to all zero
-  recipe[i]=0
+local recipe = {} -- the item recipe, should be exactly 8 items
+local pickupCount = 29 
+for i=1,pickupCount do -- init recipe to all zero
+  recipe[i] = 0
 end
 
 local resultId = 0
@@ -430,7 +431,7 @@ function bag.getInput(t)
             end
         end
 
-        for i=1,27 do -- reset recipe to all zero
+        for i=1,pickupCount do -- reset recipe to all zero
             recipe[i]=0
         end
 
@@ -453,16 +454,16 @@ function bag.getInput(t)
     if guiMode and bagCount(bagContent) >= 8 then -- checking if bag content has at least 8 items guarantees while loop exits 
         while bagContent[selection] == nil do -- move selection cursor to first available item in the bag
             selection = selection + 1
-            if selection > 27 then -- failsafe wrap around
+            if selection > pickupCount then -- failsafe wrap around
                 selection = 0
             end
         end
 
-        if selection < 27 and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTDOWN,controller) then
+        if selection < pickupCount and Input.IsActionTriggered(ButtonAction.ACTION_SHOOTDOWN,controller) then
             selection = selection + 1
             while bagContent[selection] == nil or bagContent[selection] == 0 do -- skip over entries not in the bag
                 selection = selection + 1
-                if selection > 27 then
+                if selection > pickupCount then
                     selection = 0
                 end
             end
@@ -471,7 +472,7 @@ function bag.getInput(t)
             while bagContent[selection] == nil or bagContent[selection] == 0 do -- skip over entries not in the bag
                 selection = selection - 1
                 if selection < 0 then
-                    selection = 27
+                    selection = pickupCount
                 end
             end
         end
@@ -506,7 +507,7 @@ function bag.reset(_, isContinued)
     end
 
     bagContent = {}
-    for i=1,27 do -- init recipe to all zero
+    for i=1,pickupCount do -- init recipe to all zero
         recipe[i]=0
     end
     bagOut = 0
